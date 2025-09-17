@@ -12,7 +12,7 @@ return function(Window)
         local shortestDistance = aimRadius
 
         for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") and player.Character:FindFirstChild("HumanoidRootPart") then
                 local head = player.Character.Head
                 local screenPoint, onScreen = Camera:WorldToViewportPoint(head.Position)
 
@@ -38,7 +38,6 @@ return function(Window)
         end
     end
 
-    -- ✅ Crée l'onglet dans Rayfield avec l'objet "Window" passé en paramètre
     local Tab = Window:CreateTab("🎯 Aimbot", 4483362458)
 
     Tab:CreateToggle({
@@ -49,7 +48,6 @@ return function(Window)
         end,
     })
 
-    -- 🔁 Lancer le tracking
     RunService.RenderStepped:Connect(function()
         if isAimbotEnabled then
             local target = getClosestTarget()
