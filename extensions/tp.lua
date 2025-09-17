@@ -5,7 +5,7 @@ return function(Window)
     local Tab = Window:CreateTab("⚡ Teleport", 4483362458)
 
     local PlayerList = {}
-    local SelectedPlayer = ""
+    local SelectedPlayer = nil
     local ModeTP = "Devant"
     local Dropdown
 
@@ -16,14 +16,26 @@ return function(Window)
                 table.insert(PlayerList, p.Name)
             end
         end
+
         if Dropdown then
             Dropdown:SetOptions(PlayerList)
-            -- Réinitialiser la sélection si le joueur sélectionné n'est plus dans la liste
-            if not table.find(PlayerList, SelectedPlayer) then
-                SelectedPlayer = PlayerList[1] or ""
-                Dropdown:SetValue(SelectedPlayer)
+            -- Si l'ancien joueur sélectionné est plus là, on reset
+            if SelectedPlayer == nil or not table.find(PlayerList, SelectedPlayer) then
+                SelectedPlayer = PlayerList[1] or nil
+                if SelectedPlayer then
+                    Dropdown:SetValue(SelectedPlayer)
+                end
             end
         end
+    end
+
+    local function findPlayerByName(name)
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name == name then
+                return p
+            end
+        end
+        return nil
     end
 
     local function doTeleport(target, mode)
@@ -49,10 +61,13 @@ return function(Window)
         myHrp.CFrame = CFrame.new(pos)
     end
 
+    -- Remplir PlayerList AVANT de créer le dropdown
+    updateDropdown()
+
     Dropdown = Tab:CreateDropdown({
         Name = "Choisir un joueur",
         Options = PlayerList,
-        CurrentOption = "",
+        CurrentOption = SelectedPlayer or (PlayerList[1] or ""),
         Callback = function(selected)
             SelectedPlayer = selected
         end,
@@ -70,15 +85,14 @@ return function(Window)
     Tab:CreateButton({
         Name = "TP sur joueur",
         Callback = function()
-            if SelectedPlayer == "" then return end
-            local target = Players:FindFirstChild(SelectedPlayer)
+            if not SelectedPlayer or SelectedPlayer == "" then return end
+            local target = findPlayerByName(SelectedPlayer)
             if target then
                 doTeleport(target, ModeTP)
             end
         end,
     })
 
-    updateDropdown()
     Players.PlayerAdded:Connect(updateDropdown)
     Players.PlayerRemoving:Connect(updateDropdown)
 end
