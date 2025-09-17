@@ -1,14 +1,16 @@
--- 🧠 Chargement du menu Rayfield
-loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+-- Chargement du menu Rayfield
+local successRay, Rayfield = pcall(function()
+    return loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+end)
+if not successRay then
+    error("Impossible de charger Rayfield: " .. tostring(Rayfield))
+end
 
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- Ton pseudo (automatiquement)
 local MY_USERNAME = LocalPlayer.Name
 
--- 🗂️ Création de la fenêtre principale
 local Window = Rayfield:CreateWindow({
     Name = "📱 Mobile Admin GUI",
     LoadingTitle = "Mobile Aimbot & Tools",
@@ -18,28 +20,40 @@ local Window = Rayfield:CreateWindow({
         FolderName = "MobileAdminGUI",
         FileName = "Config"
     },
-    Discord = {
-        Enabled = false,
-    },
+    Discord = { Enabled = false },
     KeySystem = false,
 })
 
--- 📦 Charger les modules (extensions)
-local function loadModule(name)
-    local success, result = pcall(function()
-        local moduleFunc = loadstring(game:HttpGet("https://raw.githubusercontent.com/kitbot14/auhufougugfer-cheat-rivals/main/extensions/" .. name .. ".lua"))
-        return moduleFunc()
-    end)
+local BASE_URL = "https://raw.githubusercontent.com/kitbot14/auhufougugfer-cheat-rivals/main/extensions/"
 
-    if success and typeof(result) == "function" then
-        -- Appelle la fonction retournée avec la fenêtre Rayfield
-        result(Window)
+local function loadModule(name)
+    print("→ Chargement du module:", name)
+    local ok, chunk = pcall(function()
+        return loadstring(game:HttpGet(BASE_URL .. name .. ".lua"))
+    end)
+    if not ok or not chunk then
+        warn("Erreur HTTP ou loadstring pour:", name, chunk)
+        return
+    end
+
+    local ok2, moduleFunc = pcall(chunk)
+    if not ok2 or type(moduleFunc) ~= "function" then
+        warn("Le module '" .. name .. "' ne retourne pas une fonction.", moduleFunc)
+        return
+    end
+
+    -- Now call it with Window
+    local ok3, err = pcall(function()
+        moduleFunc(Window)
+    end)
+    if not ok3 then
+        warn("Erreur lors de l'exécution du module '" .. name .. "':", err)
     else
-        warn("❌ Erreur de chargement du module :", name, result)
+        print("→ Module '" .. name .. "' chargé avec succès.")
     end
 end
 
--- 📥 Chargement des scripts externes
+-- Charger tes modules
 loadModule("aimbot")
 loadModule("wallhack")
 loadModule("jumpboost")
