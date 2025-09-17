@@ -32,7 +32,7 @@ local function loadModule(name)
         return loadstring(game:HttpGet(BASE_URL .. name .. ".lua"))
     end)
     if not ok or not chunk then
-        warn("Erreur HTTP ou loadstring pour:", name, chunk)
+        warn("Erreur HTTP ou loadstring pour module '" .. name .. "':", chunk)
         return
     end
 
@@ -42,18 +42,17 @@ local function loadModule(name)
         return
     end
 
-    -- Now call it with Window
     local ok3, err = pcall(function()
         moduleFunc(Window)
     end)
     if not ok3 then
-        warn("Erreur lors de l'exécution du module '" .. name .. "':", err)
+        warn("Erreur en exécutant le module '" .. name .. "':", err)
     else
         print("→ Module '" .. name .. "' chargé avec succès.")
     end
 end
 
--- Charger tes modules
+-- Charger les modules
 loadModule("aimbot")
 loadModule("wallhack")
 loadModule("jumpboost")
