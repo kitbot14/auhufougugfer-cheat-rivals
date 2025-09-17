@@ -27,7 +27,7 @@ local Window = Rayfield:CreateWindow({
 -- 📦 Charger les modules (extensions)
 local function loadModule(name)
     local success, module = pcall(function()
-        return loadstring(game:HttpGet("https://yourcdn.domain/extensions/" .. name .. ".lua"))()
+        return loadstring(game:HttpGet("https://raw.githubusercontent.com/kitbot14/auhufougugfer-cheat-rivals/main/extensions/" .. name .. ".lua"))()
     end)
     if not success then
         warn("Erreur de chargement du module:", name, module)
