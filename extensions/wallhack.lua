@@ -106,20 +106,19 @@ return function(Window)
         end
     end)
 
-    -- Toggle WallHack
-    Tab:CreateToggle({
+    -- Créer les options ET stocker leurs valeurs dans des variables
+    local toggleWallhack = Tab:CreateToggle({
         Name = "Activer Wallhack",
-        CurrentValue = false,
+        CurrentValue = enabled,
         Callback = function(value)
             enabled = value
             updateAll()
         end,
     })
 
-    -- Toggle Affichage des noms
-    Tab:CreateToggle({
+    local toggleNames = Tab:CreateToggle({
         Name = "Afficher les noms",
-        CurrentValue = false,
+        CurrentValue = showNames,
         Callback = function(value)
             showNames = value
             if not enabled then return end
@@ -137,8 +136,7 @@ return function(Window)
         end,
     })
 
-    -- Slider Distance max pour couleur verte
-    Tab:CreateSlider({
+    local sliderDistance = Tab:CreateSlider({
         Name = "Distance max pour couleur verte",
         Range = {10, 200},
         Increment = 5,
@@ -149,19 +147,17 @@ return function(Window)
         end,
     })
 
-    -- Color picker couleur proche
-    Tab:CreateColorPicker({
+    local colorpickerNear = Tab:CreateColorPicker({
         Name = "Couleur proche",
-        Default = colorNear,
+        CurrentColor = colorNear,
         Callback = function(color)
             colorNear = color
         end,
     })
 
-    -- Color picker couleur loin
-    Tab:CreateColorPicker({
+    local colorpickerFar = Tab:CreateColorPicker({
         Name = "Couleur loin",
-        Default = colorFar,
+        CurrentColor = colorFar,
         Callback = function(color)
             colorFar = color
         end,
