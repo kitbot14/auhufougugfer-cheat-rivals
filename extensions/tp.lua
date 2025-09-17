@@ -21,12 +21,12 @@ return function(Window)
         end
         if Dropdown then
             Dropdown:SetOptions(PlayerList)
-            -- Si joueur sélectionné n'existe plus, reset à premier joueur
             if not table.find(PlayerList, SelectedPlayer) then
                 SelectedPlayer = PlayerList[1] or ""
                 Dropdown:SetValue(SelectedPlayer)
             end
         end
+        print("Dropdown mis à jour, joueurs disponibles:", table.concat(PlayerList, ", "))
     end
 
     local function findPlayerByName(name)
@@ -38,14 +38,41 @@ return function(Window)
         return nil
     end
 
+    local function getHumanoidRootPart(character)
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp then return hrp end
+        -- fallback : cherche une BasePart
+        for _, part in ipairs(character:GetChildren()) do
+            if part:IsA("BasePart") then
+                return part
+            end
+        end
+        return nil
+    end
+
     local function doTeleport(target, mode)
-        if not (target and target.Character) then return end
-        local hrp = target.Character:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
+        if not (target and target.Character) then
+            warn("Cible ou personnage invalide")
+            return
+        end
+
+        local hrp = getHumanoidRootPart(target.Character)
+        if not hrp then
+            warn("HumanoidRootPart ou BasePart cible introuvable")
+            return
+        end
+
         local myChar = LocalPlayer.Character
-        if not myChar then return end
-        local myHrp = myChar:FindFirstChild("HumanoidRootPart")
-        if not myHrp then return end
+        if not myChar then
+            warn("Ton personnage local n'est pas chargé")
+            return
+        end
+
+        local myHrp = getHumanoidRootPart(myChar)
+        if not myHrp then
+            warn("Ton HumanoidRootPart ou BasePart introuvable")
+            return
+        end
 
         local pos = hrp.Position
         if mode == "Devant" then
@@ -59,10 +86,10 @@ return function(Window)
         end
 
         myHrp.CFrame = CFrame.new(pos)
+        print("TP effectué vers", target.Name, "mode:", mode)
     end
 
-    -- Création du dropdown pour sélectionner le joueur
-    updateDropdown() -- initialisation PlayerList avant création dropdown
+    updateDropdown()
 
     Dropdown = Tab:CreateDropdown({
         Name = "Choisir un joueur",
@@ -70,52 +97,56 @@ return function(Window)
         CurrentOption = SelectedPlayer,
         Callback = function(selected)
             SelectedPlayer = selected
+            print("Joueur sélectionné:", SelectedPlayer)
         end,
     })
 
-    -- Dropdown pour mode TP
     Tab:CreateDropdown({
         Name = "Mode TP",
         Options = {"Devant", "Derrière", "Au-dessus"},
         CurrentOption = ModeTP,
         Callback = function(mode)
             ModeTP = mode
+            print("Mode TP sélectionné:", ModeTP)
         end,
     })
 
-    -- Bouton pour TP une fois
     Tab:CreateButton({
         Name = "TP sur joueur",
         Callback = function()
-            if SelectedPlayer == "" then return end
+            if SelectedPlayer == "" then
+                warn("Aucun joueur sélectionné")
+                return
+            end
             local target = findPlayerByName(SelectedPlayer)
             if target then
                 doTeleport(target, ModeTP)
+            else
+                warn("Joueur cible non trouvé")
             end
         end,
     })
 
-    -- Toggle Auto TP
     Tab:CreateToggle({
         Name = "Auto TP (toutes les 10ms)",
         CurrentValue = false,
         Callback = function(value)
             AutoTP = value
             if AutoTP then
-                -- Connexion répétée
-                AutoTPConnection = RunService.Heartbeat:Connect(function(deltaTime)
+                AutoTPConnection = RunService.Heartbeat:Connect(function()
                     if SelectedPlayer == "" then return end
                     local target = findPlayerByName(SelectedPlayer)
                     if target then
                         doTeleport(target, ModeTP)
                     end
                 end)
+                print("Auto TP activé")
             else
-                -- Déconnexion
                 if AutoTPConnection then
                     AutoTPConnection:Disconnect()
                     AutoTPConnection = nil
                 end
+                print("Auto TP désactivé")
             end
         end,
     })
