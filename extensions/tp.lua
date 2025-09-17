@@ -9,7 +9,6 @@ return function(Window)
     local SelectedPlayer = ""
     local ModeTP = "Devant"
     local Dropdown
-    local AutoTP = false
     local AutoTPConnection
 
     local function updateDropdown()
@@ -26,7 +25,7 @@ return function(Window)
                 Dropdown:SetValue(SelectedPlayer)
             end
         end
-        print("[UpdateDropdown] Joueurs:", table.concat(PlayerList, ", "))
+        print("Dropdown mis à jour, joueurs disponibles:", table.concat(PlayerList, ", "))
     end
 
     local function findPlayerByName(name)
@@ -38,28 +37,45 @@ return function(Window)
         return nil
     end
 
+    local function getHumanoidRootPart(character)
+        if not character then return nil end
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp and hrp:IsA("BasePart") then return hrp end
+        -- fallback
+        for _, part in ipairs(character:GetChildren()) do
+            if part:IsA("BasePart") then
+                return part
+            end
+        end
+        return nil
+    end
+
     local function doTeleport(target, mode)
-        print("[doTeleport] Tentative de TP vers:", target.Name, "Mode:", mode)
         if not (target and target.Character) then
-            print("[doTeleport] Cible ou personnage invalide")
+            warn("Cible ou personnage invalide")
             return
         end
 
-        local hrp = target.Character:FindFirstChild("HumanoidRootPart")
+        local hrp = getHumanoidRootPart(target.Character)
         if not hrp then
-            print("[doTeleport] HumanoidRootPart cible introuvable")
+            warn("HumanoidRootPart cible introuvable")
             return
         end
 
         local myChar = LocalPlayer.Character
         if not myChar then
-            print("[doTeleport] Ton personnage local n'est pas chargé")
+            warn("Ton personnage local n'est pas chargé")
             return
         end
 
-        local myHrp = myChar:FindFirstChild("HumanoidRootPart")
+        local myHrp = getHumanoidRootPart(myChar)
         if not myHrp then
-            print("[doTeleport] Ton HumanoidRootPart introuvable")
+            warn("Ton HumanoidRootPart introuvable")
+            return
+        end
+
+        if myHrp.Anchored then
+            warn("Ton HumanoidRootPart est ancré, impossible de TP")
             return
         end
 
@@ -74,8 +90,15 @@ return function(Window)
             pos = pos + Vector3.new(0, 5, 0)
         end
 
-        myHrp.CFrame = CFrame.new(pos)
-        print("[doTeleport] TP effectué vers", target.Name, "à la position", pos)
+        -- Essaye d'utiliser SetPrimaryPartCFrame si possible
+        if myChar.PrimaryPart then
+            myChar:SetPrimaryPartCFrame(CFrame.new(pos))
+        else
+            -- Sinon set direct le CFrame du HRP
+            myHrp.CFrame = CFrame.new(pos)
+        end
+
+        print("TP effectué vers", target.Name, "mode:", mode)
     end
 
     updateDropdown()
@@ -86,7 +109,7 @@ return function(Window)
         CurrentOption = SelectedPlayer,
         Callback = function(selected)
             SelectedPlayer = selected
-            print("[Dropdown] Joueur sélectionné:", SelectedPlayer)
+            print("Joueur sélectionné:", SelectedPlayer)
         end,
     })
 
@@ -96,23 +119,22 @@ return function(Window)
         CurrentOption = ModeTP,
         Callback = function(mode)
             ModeTP = mode
-            print("[ModeTP] Mode TP sélectionné:", ModeTP)
+            print("Mode TP sélectionné:", ModeTP)
         end,
     })
 
     Tab:CreateButton({
         Name = "TP sur joueur",
         Callback = function()
-            print("[Button] TP sur joueur cliqué")
             if SelectedPlayer == "" then
-                print("[Button] Aucun joueur sélectionné")
+                warn("Aucun joueur sélectionné")
                 return
             end
             local target = findPlayerByName(SelectedPlayer)
             if target then
                 doTeleport(target, ModeTP)
             else
-                print("[Button] Joueur cible non trouvé")
+                warn("Joueur cible non trouvé")
             end
         end,
     })
@@ -121,9 +143,7 @@ return function(Window)
         Name = "Auto TP (toutes les 10ms)",
         CurrentValue = false,
         Callback = function(value)
-            AutoTP = value
-            if AutoTP then
-                print("[AutoTP] Activation")
+            if value then
                 AutoTPConnection = RunService.Heartbeat:Connect(function()
                     if SelectedPlayer == "" then return end
                     local target = findPlayerByName(SelectedPlayer)
@@ -131,12 +151,13 @@ return function(Window)
                         doTeleport(target, ModeTP)
                     end
                 end)
+                print("Auto TP activé")
             else
-                print("[AutoTP] Désactivation")
                 if AutoTPConnection then
                     AutoTPConnection:Disconnect()
                     AutoTPConnection = nil
                 end
+                print("Auto TP désactivé")
             end
         end,
     })
