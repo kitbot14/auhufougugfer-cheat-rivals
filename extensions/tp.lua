@@ -5,6 +5,8 @@ return function(Window)
     local Tab = Window:CreateTab("⚡ Teleport", 4483362458)
 
     local PlayerList = {}
+    local SelectedPlayer = ""
+    local ModeTP = "Devant"
     local Dropdown
 
     local function updateDropdown()
@@ -16,10 +18,14 @@ return function(Window)
         end
         if Dropdown then
             Dropdown:SetOptions(PlayerList)
+            -- Réinitialiser la sélection si le joueur sélectionné n'est plus dans la liste
+            if not table.find(PlayerList, SelectedPlayer) then
+                SelectedPlayer = PlayerList[1] or ""
+                Dropdown:SetValue(SelectedPlayer)
+            end
         end
     end
 
-    -- Callback pour teleport
     local function doTeleport(target, mode)
         if not (target and target.Character) then return end
         local hrp = target.Character:FindFirstChild("HumanoidRootPart")
@@ -31,17 +37,15 @@ return function(Window)
 
         local pos = hrp.Position
         if mode == "Devant" then
-            -- devant : devant (face à lui) => on utilise sa CFrame lookVector
             local look = hrp.CFrame.LookVector
-            pos = pos + (look * 5) -- 5 studs devant
+            pos = pos + (look * 5)
         elseif mode == "Derrière" then
             local look = hrp.CFrame.LookVector
-            pos = pos - (look * 5) -- 5 studs derrière
+            pos = pos - (look * 5)
         elseif mode == "Au-dessus" then
-            pos = pos + Vector3.new(0, 5, 0) -- 5 studs au dessus
+            pos = pos + Vector3.new(0, 5, 0)
         end
 
-        -- téléportation
         myHrp.CFrame = CFrame.new(pos)
     end
 
@@ -50,27 +54,26 @@ return function(Window)
         Options = PlayerList,
         CurrentOption = "",
         Callback = function(selected)
-            -- ne fait rien, juste sélectionner
+            SelectedPlayer = selected
         end,
     })
 
     Tab:CreateDropdown({
         Name = "Mode TP",
         Options = {"Devant", "Derrière", "Au-dessus"},
-        CurrentOption = "Devant",
+        CurrentOption = ModeTP,
         Callback = function(mode)
-            Tab.ModeTP = mode
+            ModeTP = mode
         end,
     })
 
     Tab:CreateButton({
         Name = "TP sur joueur",
         Callback = function()
-            local sel = Dropdown.CurrentOption or ""
-            if sel == "" then return end
-            local target = Players:FindFirstChild(sel)
+            if SelectedPlayer == "" then return end
+            local target = Players:FindFirstChild(SelectedPlayer)
             if target then
-                doTeleport(target, Tab.ModeTP or "Devant")
+                doTeleport(target, ModeTP)
             end
         end,
     })
