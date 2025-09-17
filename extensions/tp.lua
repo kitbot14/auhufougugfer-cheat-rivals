@@ -1,13 +1,16 @@
 return function(Window)
     local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
     local LocalPlayer = Players.LocalPlayer
 
     local Tab = Window:CreateTab("⚡ Teleport", 4483362458)
 
     local PlayerList = {}
-    local SelectedPlayer = nil
+    local SelectedPlayer = ""
     local ModeTP = "Devant"
     local Dropdown
+    local AutoTP = false
+    local AutoTPConnection
 
     local function updateDropdown()
         PlayerList = {}
@@ -16,15 +19,12 @@ return function(Window)
                 table.insert(PlayerList, p.Name)
             end
         end
-
         if Dropdown then
             Dropdown:SetOptions(PlayerList)
-            -- Si l'ancien joueur sélectionné est plus là, on reset
-            if SelectedPlayer == nil or not table.find(PlayerList, SelectedPlayer) then
-                SelectedPlayer = PlayerList[1] or nil
-                if SelectedPlayer then
-                    Dropdown:SetValue(SelectedPlayer)
-                end
+            -- Si joueur sélectionné n'existe plus, reset à premier joueur
+            if not table.find(PlayerList, SelectedPlayer) then
+                SelectedPlayer = PlayerList[1] or ""
+                Dropdown:SetValue(SelectedPlayer)
             end
         end
     end
@@ -61,18 +61,19 @@ return function(Window)
         myHrp.CFrame = CFrame.new(pos)
     end
 
-    -- Remplir PlayerList AVANT de créer le dropdown
-    updateDropdown()
+    -- Création du dropdown pour sélectionner le joueur
+    updateDropdown() -- initialisation PlayerList avant création dropdown
 
     Dropdown = Tab:CreateDropdown({
         Name = "Choisir un joueur",
         Options = PlayerList,
-        CurrentOption = SelectedPlayer or (PlayerList[1] or ""),
+        CurrentOption = SelectedPlayer,
         Callback = function(selected)
             SelectedPlayer = selected
         end,
     })
 
+    -- Dropdown pour mode TP
     Tab:CreateDropdown({
         Name = "Mode TP",
         Options = {"Devant", "Derrière", "Au-dessus"},
@@ -82,13 +83,39 @@ return function(Window)
         end,
     })
 
+    -- Bouton pour TP une fois
     Tab:CreateButton({
         Name = "TP sur joueur",
         Callback = function()
-            if not SelectedPlayer or SelectedPlayer == "" then return end
+            if SelectedPlayer == "" then return end
             local target = findPlayerByName(SelectedPlayer)
             if target then
                 doTeleport(target, ModeTP)
+            end
+        end,
+    })
+
+    -- Toggle Auto TP
+    Tab:CreateToggle({
+        Name = "Auto TP (toutes les 10ms)",
+        CurrentValue = false,
+        Callback = function(value)
+            AutoTP = value
+            if AutoTP then
+                -- Connexion répétée
+                AutoTPConnection = RunService.Heartbeat:Connect(function(deltaTime)
+                    if SelectedPlayer == "" then return end
+                    local target = findPlayerByName(SelectedPlayer)
+                    if target then
+                        doTeleport(target, ModeTP)
+                    end
+                end)
+            else
+                -- Déconnexion
+                if AutoTPConnection then
+                    AutoTPConnection:Disconnect()
+                    AutoTPConnection = nil
+                end
             end
         end,
     })
