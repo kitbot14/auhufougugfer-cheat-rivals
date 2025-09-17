@@ -4,41 +4,77 @@ return function(Window)
 
     local Tab = Window:CreateTab("⚡ Teleport", 4483362458)
 
-    local PlayerList = {} -- Liste des noms de joueurs
-    local Dropdown -- On déclare le dropdown avant pour y accéder après
+    local PlayerList = {}
+    local Dropdown
 
-    -- Fonction de mise à jour des joueurs
     local function updateDropdown()
         PlayerList = {}
-
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= LocalPlayer then
                 table.insert(PlayerList, p.Name)
             end
         end
-
-        -- Assure que dropdown existe avant de modifier
         if Dropdown then
             Dropdown:SetOptions(PlayerList)
         end
     end
 
-    -- Créer le dropdown après avoir défini la fonction de mise à jour
+    -- Callback pour teleport
+    local function doTeleport(target, mode)
+        if not (target and target.Character) then return end
+        local hrp = target.Character:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        local myChar = LocalPlayer.Character
+        if not myChar then return end
+        local myHrp = myChar:FindFirstChild("HumanoidRootPart")
+        if not myHrp then return end
+
+        local pos = hrp.Position
+        if mode == "Devant" then
+            -- devant : devant (face à lui) => on utilise sa CFrame lookVector
+            local look = hrp.CFrame.LookVector
+            pos = pos + (look * 5) -- 5 studs devant
+        elseif mode == "Derrière" then
+            local look = hrp.CFrame.LookVector
+            pos = pos - (look * 5) -- 5 studs derrière
+        elseif mode == "Au-dessus" then
+            pos = pos + Vector3.new(0, 5, 0) -- 5 studs au dessus
+        end
+
+        -- téléportation
+        myHrp.CFrame = CFrame.new(pos)
+    end
+
     Dropdown = Tab:CreateDropdown({
         Name = "Choisir un joueur",
         Options = PlayerList,
         CurrentOption = "",
         Callback = function(selected)
-            local target = Players:FindFirstChild(selected)
-            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame + Vector3.new(2, 0, 2)
-                end
+            -- ne fait rien, juste sélectionner
+        end,
+    })
+
+    Tab:CreateDropdown({
+        Name = "Mode TP",
+        Options = {"Devant", "Derrière", "Au-dessus"},
+        CurrentOption = "Devant",
+        Callback = function(mode)
+            Tab.ModeTP = mode
+        end,
+    })
+
+    Tab:CreateButton({
+        Name = "TP sur joueur",
+        Callback = function()
+            local sel = Dropdown.CurrentOption or ""
+            if sel == "" then return end
+            local target = Players:FindFirstChild(sel)
+            if target then
+                doTeleport(target, Tab.ModeTP or "Devant")
             end
         end,
     })
 
-    -- Mettre à jour la liste maintenant et à chaque changement
     updateDropdown()
     Players.PlayerAdded:Connect(updateDropdown)
     Players.PlayerRemoving:Connect(updateDropdown)
