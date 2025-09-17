@@ -26,11 +26,16 @@ local Window = Rayfield:CreateWindow({
 
 -- 📦 Charger les modules (extensions)
 local function loadModule(name)
-    local success, module = pcall(function()
-        return loadstring(game:HttpGet("https://raw.githubusercontent.com/kitbot14/auhufougugfer-cheat-rivals/main/extensions/" .. name .. ".lua"))()
+    local success, result = pcall(function()
+        local moduleFunc = loadstring(game:HttpGet("https://raw.githubusercontent.com/kitbot14/auhufougugfer-cheat-rivals/main/extensions/" .. name .. ".lua"))
+        return moduleFunc()
     end)
-    if not success then
-        warn("Erreur de chargement du module:", name, module)
+
+    if success and typeof(result) == "function" then
+        -- Appelle la fonction retournée avec la fenêtre Rayfield
+        result(Window)
+    else
+        warn("❌ Erreur de chargement du module :", name, result)
     end
 end
 
