@@ -26,7 +26,7 @@ return function(Window)
                 Dropdown:SetValue(SelectedPlayer)
             end
         end
-        print("Dropdown mis à jour, joueurs disponibles:", table.concat(PlayerList, ", "))
+        print("[UpdateDropdown] Joueurs:", table.concat(PlayerList, ", "))
     end
 
     local function findPlayerByName(name)
@@ -38,39 +38,28 @@ return function(Window)
         return nil
     end
 
-    local function getHumanoidRootPart(character)
-        local hrp = character:FindFirstChild("HumanoidRootPart")
-        if hrp then return hrp end
-        -- fallback : cherche une BasePart
-        for _, part in ipairs(character:GetChildren()) do
-            if part:IsA("BasePart") then
-                return part
-            end
-        end
-        return nil
-    end
-
     local function doTeleport(target, mode)
+        print("[doTeleport] Tentative de TP vers:", target.Name, "Mode:", mode)
         if not (target and target.Character) then
-            warn("Cible ou personnage invalide")
+            print("[doTeleport] Cible ou personnage invalide")
             return
         end
 
-        local hrp = getHumanoidRootPart(target.Character)
+        local hrp = target.Character:FindFirstChild("HumanoidRootPart")
         if not hrp then
-            warn("HumanoidRootPart ou BasePart cible introuvable")
+            print("[doTeleport] HumanoidRootPart cible introuvable")
             return
         end
 
         local myChar = LocalPlayer.Character
         if not myChar then
-            warn("Ton personnage local n'est pas chargé")
+            print("[doTeleport] Ton personnage local n'est pas chargé")
             return
         end
 
-        local myHrp = getHumanoidRootPart(myChar)
+        local myHrp = myChar:FindFirstChild("HumanoidRootPart")
         if not myHrp then
-            warn("Ton HumanoidRootPart ou BasePart introuvable")
+            print("[doTeleport] Ton HumanoidRootPart introuvable")
             return
         end
 
@@ -86,7 +75,7 @@ return function(Window)
         end
 
         myHrp.CFrame = CFrame.new(pos)
-        print("TP effectué vers", target.Name, "mode:", mode)
+        print("[doTeleport] TP effectué vers", target.Name, "à la position", pos)
     end
 
     updateDropdown()
@@ -97,7 +86,7 @@ return function(Window)
         CurrentOption = SelectedPlayer,
         Callback = function(selected)
             SelectedPlayer = selected
-            print("Joueur sélectionné:", SelectedPlayer)
+            print("[Dropdown] Joueur sélectionné:", SelectedPlayer)
         end,
     })
 
@@ -107,22 +96,23 @@ return function(Window)
         CurrentOption = ModeTP,
         Callback = function(mode)
             ModeTP = mode
-            print("Mode TP sélectionné:", ModeTP)
+            print("[ModeTP] Mode TP sélectionné:", ModeTP)
         end,
     })
 
     Tab:CreateButton({
         Name = "TP sur joueur",
         Callback = function()
+            print("[Button] TP sur joueur cliqué")
             if SelectedPlayer == "" then
-                warn("Aucun joueur sélectionné")
+                print("[Button] Aucun joueur sélectionné")
                 return
             end
             local target = findPlayerByName(SelectedPlayer)
             if target then
                 doTeleport(target, ModeTP)
             else
-                warn("Joueur cible non trouvé")
+                print("[Button] Joueur cible non trouvé")
             end
         end,
     })
@@ -133,6 +123,7 @@ return function(Window)
         Callback = function(value)
             AutoTP = value
             if AutoTP then
+                print("[AutoTP] Activation")
                 AutoTPConnection = RunService.Heartbeat:Connect(function()
                     if SelectedPlayer == "" then return end
                     local target = findPlayerByName(SelectedPlayer)
@@ -140,13 +131,12 @@ return function(Window)
                         doTeleport(target, ModeTP)
                     end
                 end)
-                print("Auto TP activé")
             else
+                print("[AutoTP] Désactivation")
                 if AutoTPConnection then
                     AutoTPConnection:Disconnect()
                     AutoTPConnection = nil
                 end
-                print("Auto TP désactivé")
             end
         end,
     })
