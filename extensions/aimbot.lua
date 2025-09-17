@@ -1,4 +1,4 @@
-return function()
+return function(Window)
     local Players = game:GetService("Players")
     local RunService = game:GetService("RunService")
     local Camera = workspace.CurrentCamera
@@ -38,6 +38,7 @@ return function()
         end
     end
 
+    -- ✅ Crée l'onglet dans Rayfield avec l'objet "Window" passé en paramètre
     local Tab = Window:CreateTab("🎯 Aimbot", 4483362458)
 
     Tab:CreateToggle({
@@ -48,6 +49,7 @@ return function()
         end,
     })
 
+    -- 🔁 Lancer le tracking
     RunService.RenderStepped:Connect(function()
         if isAimbotEnabled then
             local target = getClosestTarget()
