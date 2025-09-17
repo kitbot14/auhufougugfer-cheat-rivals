@@ -4,16 +4,17 @@ return function(Window)
 
     local Tab = Window:CreateTab("🦘 Jump Boost", 4483362458)
 
-    local JumpValue = 50 -- Valeur par défaut
+    local JumpValue = 50 -- défaut
 
-    -- 🧠 Fonction pour appliquer la puissance de saut
     local function applyJumpPower(power)
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = power
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.JumpPower = power
+            end
         end
     end
 
-    -- 🕹️ Slider dans le menu
     Tab:CreateSlider({
         Name = "Puissance du saut",
         Range = {50, 300},
@@ -26,9 +27,9 @@ return function(Window)
         end,
     })
 
-    -- 🔁 Appliquer automatiquement après un reset
+    -- Appliquer aussi après respawn
     LocalPlayer.CharacterAdded:Connect(function(char)
-        char:WaitForChild("Humanoid")
+        char:WaitForChild("Humanoid", 5)
         applyJumpPower(JumpValue)
     end)
 end
