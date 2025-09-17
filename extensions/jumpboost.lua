@@ -4,7 +4,7 @@ return function(Window)
 
     local Tab = Window:CreateTab("🦘 Jump Boost", 4483362458)
 
-    local JumpValue = 50 -- défaut
+    local JumpValue = 50 -- valeur par défaut
 
     local function applyJumpPower(power)
         if LocalPlayer.Character then
@@ -19,7 +19,7 @@ return function(Window)
         Name = "Puissance du saut",
         Range = {50, 300},
         Increment = 10,
-        Suffix = "Power",
+        Suffix = " Power",
         CurrentValue = JumpValue,
         Callback = function(Value)
             JumpValue = Value
@@ -27,9 +27,16 @@ return function(Window)
         end,
     })
 
-    -- Appliquer aussi après respawn
-    LocalPlayer.CharacterAdded:Connect(function(char)
-        char:WaitForChild("Humanoid", 5)
-        applyJumpPower(JumpValue)
+    -- Appliquer la valeur au chargement du personnage (respawn)
+    LocalPlayer.CharacterAdded:Connect(function(character)
+        local humanoid = character:WaitForChild("Humanoid", 5)
+        if humanoid then
+            humanoid.JumpPower = JumpValue
+        end
     end)
+
+    -- Appliquer immédiatement au lancement du script si personnage déjà chargé
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        applyJumpPower(JumpValue)
+    end
 end
